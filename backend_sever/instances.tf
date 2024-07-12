@@ -1,26 +1,15 @@
 #instance ami data source
-data "aws_ami" "ubuntu" {
-  most_recent = true
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-
-  owners = ["099720109477"] # Canonical
+data "aws_ssm_parameter" "amzn2_linux" {
+  name = "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
 }
 #aws instance
 
 resource "aws_instance" "HistopiaBackend" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.example.id
-  user_data     = <<EOF
+  ami                    = nonsensitive(data.aws_ssm_parameter.amzn2_linux.value)
+  instance_type          = "t2.micro"
+  subnet_id              = aws_subnet.histopia.id
+  vpc_security_group_ids = [aws_security_group.histopia.id]
+  user_data              = <<EOF
 #! /bin/bash
 sudo amazon-linux-extras install -y nginx1
 sudo service nginx start
